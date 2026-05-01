@@ -390,7 +390,10 @@ export const MoodMusicScreen = ({ onEndSession, language }: { onEndSession: () =
       />
 
       <div className="mt-8 flex flex-col md:flex-row items-center justify-center gap-4 w-full">
-        <button className="w-full md:w-auto px-10 py-4 rounded-full bg-surface-container-high/20 border border-white/5 text-on-surface text-[13px] font-medium flex items-center justify-center gap-2 hover:bg-surface-container-high/40 hover:border-primary/30 hover:shadow-[0_0_25px_rgba(192,193,255,0.1)] backdrop-blur-2xl transition-all duration-500 active:scale-95 group">
+        <button 
+          onClick={() => alert("This feature is not yet functional and currently working if the dev has some spare time")}
+          className="w-full md:w-auto px-10 py-4 rounded-full bg-surface-container-high/20 border border-white/5 text-on-surface text-[13px] font-medium flex items-center justify-center gap-2 hover:bg-surface-container-high/40 hover:border-primary/30 hover:shadow-[0_0_25px_rgba(192,193,255,0.1)] backdrop-blur-2xl transition-all duration-500 active:scale-95 group"
+        >
           <Download size={20} className="group-hover:rotate-12 transition-transform" />
           {language === 'bisaya' ? 'I-download ang Summary' : language === 'tagalog' ? 'I-download ang Summary' : 'Download Summary'}
         </button>
