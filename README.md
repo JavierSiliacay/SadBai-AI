@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="public/logo.png" alt="SadBai AI Logo" width="120" />
+</div>
+
 # SadBai AI | Your Emotional Companion
 
 SadBai AI is a place where you can find comfort during your heavy moments. It is designed to be a safe space where you can talk, listen, and breathe through your emotions.
