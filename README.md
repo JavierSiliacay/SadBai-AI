@@ -35,5 +35,12 @@ Created by Javier Siliacay.
 - Instagram: www.instagram.com/itsyaboi_vier
 - GitHub: github.com/javiersiliacay
 
+<br />
+
+<div align="center">
+  <img src="public/autotronics_logo.png" alt="Autotronics Logo" width="100" style="margin: 0 20px" />
+  <img src="public/cot_logo.png" alt="COT Logo" width="100" style="margin: 0 20px" />
+</div>
+
 ---
 *Take your time. Keep breathing. You are not alone.*
