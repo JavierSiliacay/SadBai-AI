@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="public/logo.png" alt="SadBai AI Logo" width="120" />
+  <img src="public/logo.png" alt="SadBai AI Logo" width="280" />
 </div>
 
 # SadBai AI | Your Emotional Companion
