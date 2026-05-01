@@ -31,15 +31,16 @@ SadBai was built as a rapid-response project in just 24 hours. While the system 
 
 ## Connect with the Developer
 Created by Javier Siliacay.
-- Facebook: facebook.com/siliacayjavier
+- Facebook: www.facebook.com/siliacayjavier
 - Instagram: www.instagram.com/itsyaboi_vier
-- GitHub: github.com/javiersiliacay
+- GitHub: www.github.com/javiersiliacay
 
 <br />
 
 <div align="center">
-  <img src="public/autotronics_logo.png" alt="Autotronics Logo" width="100" style="margin: 0 20px" />
-  <img src="public/cot_logo.png" alt="COT Logo" width="100" style="margin: 0 20px" />
+  <img src="public/autotronics_logo.png" alt="Autotronics Logo" width="100" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="public/cot_logo.png" alt="COT Logo" width="100" />
 </div>
 
 ---
