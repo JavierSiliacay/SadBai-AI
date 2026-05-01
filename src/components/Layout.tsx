@@ -24,7 +24,7 @@ export const Header = () => (
 export const Footer = ({ language }: { language?: 'bisaya' | 'tagalog' | 'english' }) => (
   <footer className="flex flex-col items-center gap-4 px-10 mb-24 w-full py-12 bg-transparent opacity-40 transition-opacity duration-300">
     <p className="text-xs text-center leading-relaxed text-outline-variant">
-      {language === 'bisaya' ? 'Ang imong kasingkasing luwas diri.' : language === 'tagalog' ? 'Ang iyong puso ay ligtas dito.' : 'Your heart is safe here.'} © 2024 SadBai AI
+      {language === 'bisaya' ? 'Ang imong kasingkasing luwas diri.' : language === 'tagalog' ? 'Ang iyong puso ay ligtas dito.' : 'Your heart is safe here.'} © 2026 SadBai AI
     </p>
     <div className="flex gap-4">
       <a className="text-xs text-outline hover:text-primary transition-colors" href="#">Privacy Settings</a>
