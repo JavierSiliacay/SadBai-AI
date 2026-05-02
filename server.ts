@@ -38,6 +38,7 @@ io.on("connection", (socket) => {
   socket.on("sendHug", () => {
     totalHugs++;
     io.emit("totalHugs", totalHugs);
+    socket.broadcast.emit("incomingHug");
   });
 
   socket.on("disconnect", () => {

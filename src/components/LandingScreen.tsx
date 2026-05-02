@@ -10,6 +10,7 @@ import type { InitProgressReport } from '@mlc-ai/web-llm';
 export const LandingScreen = ({ 
   onStart, 
   onEnableOffline, 
+  onDisableOffline,
   isOfflineMode 
 }: { 
   onStart: (lang: Language) => void;
@@ -18,6 +19,7 @@ export const LandingScreen = ({
     onComplete: () => void,
     onError: (err: any) => void
   ) => void;
+  onDisableOffline: () => void;
   isOfflineMode: boolean;
 }) => {
   const [lang, setLang] = useState<Language>('bisaya');
@@ -186,10 +188,13 @@ export const LandingScreen = ({
               Enable Offline Mode
             </button>
           ) : (
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-tertiary">
+            <button
+              onClick={onDisableOffline}
+              className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-tertiary hover:text-on-surface transition-colors"
+            >
               <CloudOff size={16} />
-              Offline Mode Active
-            </div>
+              Offline Mode Active (Tap to Disable)
+            </button>
           )}
         </motion.div>
       </main>
@@ -232,7 +237,7 @@ export const LandingScreen = ({
                 <>
                   <p className="text-sm text-on-surface-variant text-center mb-6">
                     <span className="font-bold text-tertiary">Step 1: Install the App</span><br/>
-                    To use SadBai fully offline without an internet connection, you must install it to your device's home screen first.
+                    To use SadBai fully offline without an internet connection, you must install it to your device's home screen first and once it's done please open the app to download the AI-engine.
                   </p>
                   <div className="flex flex-col gap-2">
                     <button
@@ -273,10 +278,13 @@ export const LandingScreen = ({
                 </>
               ) : (
                 <>
-                  <p className="text-sm text-on-surface-variant text-center mb-6">
+                  <p className="text-sm text-on-surface-variant text-center mb-4">
                     <span className="font-bold text-tertiary">Step 2: Download AI Engine</span><br/>
-                    App installed! Now, you need to download the AI engine (~1.5GB). You only need to do this once.
+                    App installed! Now, you need to download the AI engine. You only need to do this once.
                   </p>
+                  <div className="bg-error-container/20 border border-error/30 p-3 rounded-xl mb-6 text-xs text-on-surface text-center">
+                    <span className="font-bold text-error">Warning:</span> The download is roughly <strong>~1.5GB</strong>. Please ensure you are on Wi-Fi to avoid cellular data charges.
+                  </div>
                   <div className="flex flex-col gap-2">
                     <button
                       onClick={() => {

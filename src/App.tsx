@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Header, BottomNav } from './components/Layout';
 import { LandingScreen } from './components/LandingScreen';
@@ -8,7 +8,9 @@ import { ReflectionScreen } from './components/ReflectionScreen';
 import { SupportScreen } from './components/SupportScreen';
 import { Screen, Message, Language } from './types';
 import { generateReflection } from './gemini';
-import { CreateWebWorkerMLCEngine, InitProgressReport, WebWorkerMLCEngine } from "@mlc-ai/web-llm";
+import { CreateWebWorkerMLCEngine, InitProgressReport, WebWorkerMLCEngine, hasModelInCache } from "@mlc-ai/web-llm";
+import { io } from 'socket.io-client';
+import { Heart } from 'lucide-react';
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('landing');
@@ -21,6 +23,41 @@ export default function App() {
   // WebLLM State
   const [engine, setEngine] = useState<WebWorkerMLCEngine | null>(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
+  const [globalHugs, setGlobalHugs] = useState<{id: number}[]>([]);
+
+  useEffect(() => {
+    const socket = io();
+    socket.on("incomingHug", () => {
+      const hugId = Date.now() + Math.random();
+      setGlobalHugs(prev => [...prev, { id: hugId }]);
+      setTimeout(() => {
+        setGlobalHugs(prev => prev.filter(h => h.id !== hugId));
+      }, 4000);
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  useEffect(() => {
+    const checkPersistedModel = async () => {
+      try {
+        if (navigator.storage && navigator.storage.persist) {
+          await navigator.storage.persist();
+        }
+        const isCached = await hasModelInCache("gemma-2b-it-q4f32_1-MLC");
+        const wasEnabled = localStorage.getItem("sadbai_offline_enabled") === "true";
+        if (isCached && wasEnabled) {
+          // Silently load in background
+          handleEnableOffline(() => {}, () => {}, () => {});
+        }
+      } catch (e) {
+        console.error("Cache check failed", e);
+      }
+    };
+    checkPersistedModel();
+  }, []);
 
   const handleReflect = async () => {
     if (messages.length < 2) return;
@@ -111,6 +148,12 @@ Keep it empathetic, non-judgmental, and short.`;
     onError: (err: any) => void
   ) => {
     try {
+      if (engine) {
+        setIsOfflineMode(true);
+        localStorage.setItem("sadbai_offline_enabled", "true");
+        onComplete();
+        return;
+      }
       // Use Web Worker to avoid freezing the UI
       const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
       const newEngine = await CreateWebWorkerMLCEngine(worker, "gemma-2b-it-q4f32_1-MLC", {
@@ -118,6 +161,7 @@ Keep it empathetic, non-judgmental, and short.`;
       });
       setEngine(newEngine);
       setIsOfflineMode(true);
+      localStorage.setItem("sadbai_offline_enabled", "true");
       onComplete();
     } catch (error) {
       console.error(error);
@@ -138,8 +182,18 @@ Keep it empathetic, non-judgmental, and short.`;
 
     try {
       const systemInstruction = language === 'bisaya'
-        ? "You are SadBai AI, a supportive listener for people going through heartbreak. STRICT RULE: Speak ONLY in Cebuano (Bisaya). DO NOT use English or Tagalog. Be extremely empathic, validating, and never judgmental. Keep responses short to encourage the user to 'ipagawas tanan'."
-        : "You are SadBai AI, a supportive listener for people going through heartbreak. STRICT RULE: Speak ONLY in Tagalog. DO NOT use English or Bisaya. Be extremely empathic, validating, and never judgmental. Keep responses short to encourage the user to 'ilabas lahat'.";
+        ? `You are SadBai, an empathetic friend. STRICT RULES: Reply ONLY in simple Cebuano (Bisaya). Keep it short (1-2 sentences). Do NOT use English.
+Examples:
+User: Gibiyaan ko niya.
+SadBai: Sakit kaayo paminawon. Okay ra na muhilak, naa ra ko diri maminaw nimo.
+User: Kapoy na kaayo.
+SadBai: Ramdam nako imong kakapoy. Ipagawas lang na tanan, okay ra na.`
+        : `You are SadBai, an empathetic friend. STRICT RULES: Reply ONLY in simple Tagalog. Keep it short (1-2 sentences). Do NOT use English.
+Examples:
+User: Iniwan niya ako.
+SadBai: Napakasakit niyan. Okay lang umiyak, nandito lang ako para makinig sa'yo.
+User: Ang lungkot ko ngayon.
+SadBai: Ramdam ko ang bigat ng nararamdaman mo. Ilabas mo lang lahat dito.`;
 
       const aiMsgId = (Date.now() + 1).toString();
       let aiResponseText = "";
@@ -170,14 +224,28 @@ Keep it empathetic, non-judgmental, and short.`;
         const chunks = await engine.chat.completions.create({
           messages: formattedMessages,
           stream: true,
+          max_tokens: 80,
+          temperature: 0.6,
         });
 
+        let finalOutput = "";
         for await (const chunk of chunks) {
           const content = chunk.choices[0]?.delta.content || "";
           aiResponseText += content;
+          finalOutput += content;
+          
+          // Post-processing to ensure tone mapping if possible, though mostly relying on system prompt
           setMessages(prev => prev.map(m => 
             m.id === aiMsgId ? { ...m, content: aiResponseText } : m
           ));
+        }
+        
+        // Output Post-Processing Fallback
+        if (finalOutput.trim().length === 0 || finalOutput.length > 400 || finalOutput.toLowerCase().includes("i am an ai")) {
+          const fallback = language === 'bisaya' 
+            ? "Naminaw ko nimo. Okay ra na mobati ug kaguol karon. Padayon lang ug istorya." 
+            : "Nakikinig ako sa iyo. Okay lang makaramdam ng ganyan. Magkwento ka pa.";
+          setMessages(prev => prev.map(m => m.id === aiMsgId ? { ...m, content: fallback } : m));
         }
       } else {
         // --- ONLINE MODE ---
@@ -266,6 +334,10 @@ Keep it empathetic, non-judgmental, and short.`;
             <LandingScreen 
               onStart={handleStart} 
               onEnableOffline={handleEnableOffline}
+              onDisableOffline={() => {
+                setIsOfflineMode(false);
+                localStorage.setItem("sadbai_offline_enabled", "false");
+              }}
               isOfflineMode={isOfflineMode}
             />
           </motion.div>
@@ -336,6 +408,27 @@ Keep it empathetic, non-judgmental, and short.`;
         activeScreen={screen} 
         setScreen={(s) => s === 'reflection' ? handleReflect() : setScreen(s)} 
       />
+
+      {/* Global Hugs Animation Container */}
+      <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center overflow-hidden">
+        <AnimatePresence>
+          {globalHugs.map(hug => (
+            <motion.div
+              key={hug.id}
+              initial={{ opacity: 0, scale: 0.5, y: 100 }}
+              animate={{ opacity: 1, scale: [1, 1.2, 1], y: -200 }}
+              exit={{ opacity: 0, scale: 1.5, y: -300 }}
+              transition={{ duration: 3.5, ease: "easeOut" }}
+              className="absolute text-tertiary flex flex-col items-center drop-shadow-[0_0_20px_rgba(192,193,255,1)]"
+            >
+              <Heart size={80} fill="currentColor" />
+              <span className="text-xs font-bold mt-2 bg-slate-900/80 backdrop-blur-md px-4 py-2 rounded-full text-white uppercase tracking-widest border border-white/10">
+                {language === 'bisaya' ? 'Adunay Nagpadala ug Hug!' : language === 'tagalog' ? 'May Nagpadala ng Hug!' : 'Someone sent a hug!'}
+              </span>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </div>
     </div>
   );
 }
