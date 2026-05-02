@@ -1,15 +1,54 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { ShieldCheck, ArrowRight } from 'lucide-react';
 import { Footer } from './Layout';
 import { Language } from '../types';
 import { io } from 'socket.io-client';
+import { CloudOff, Download, X } from 'lucide-react';
+import type { InitProgressReport } from '@mlc-ai/web-llm';
 
-export const LandingScreen = ({ onStart }: { onStart: (lang: Language) => void }) => {
+export const LandingScreen = ({ 
+  onStart, 
+  onEnableOffline, 
+  isOfflineMode 
+}: { 
+  onStart: (lang: Language) => void;
+  onEnableOffline: (
+    onProgress: (progress: InitProgressReport) => void,
+    onComplete: () => void,
+    onError: (err: any) => void
+  ) => void;
+  isOfflineMode: boolean;
+}) => {
   const [lang, setLang] = useState<Language>('bisaya');
   const [activeUsers, setActiveUsers] = useState<number>(0);
+  const [showModal, setShowModal] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [progress, setProgress] = useState<InitProgressReport | null>(null);
+
+  // PWA Install State
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   React.useEffect(() => {
+    // Check if app is in standalone mode
+    const checkStandalone = () => {
+      const isStandaloneQuery = window.matchMedia('(display-mode: standalone)').matches;
+      // @ts-ignore
+      const isIOSStandalone = window.navigator.standalone === true;
+      setIsStandalone(isStandaloneQuery || isIOSStandalone);
+    };
+
+    checkStandalone();
+
+    const handleBeforeInstallPrompt = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    window.matchMedia('(display-mode: standalone)').addEventListener('change', checkStandalone);
+
     const socket = io();
     
     socket.on('activeUsers', (count: number) => {
@@ -18,8 +57,23 @@ export const LandingScreen = ({ onStart }: { onStart: (lang: Language) => void }
 
     return () => {
       socket.disconnect();
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+      window.matchMedia('(display-mode: standalone)').removeEventListener('change', checkStandalone);
     };
   }, []);
+
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else {
+      // Fallback for iOS Safari which doesn't support beforeinstallprompt
+      alert("Tap the Share icon at the bottom of your browser and select 'Add to Home Screen' to install SadBai.");
+    }
+  };
 
   return (
     <div className="flex-grow flex flex-col relative overflow-hidden">
@@ -110,7 +164,7 @@ export const LandingScreen = ({ onStart }: { onStart: (lang: Language) => void }
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="mt-4 w-full flex justify-center"
+          className="mt-4 w-full flex flex-col items-center gap-4"
         >
           <button 
             onClick={() => onStart(lang)}
@@ -122,8 +176,143 @@ export const LandingScreen = ({ onStart }: { onStart: (lang: Language) => void }
             </span>
             <ArrowRight size={20} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
           </button>
+
+          {!isOfflineMode ? (
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-outline hover:text-tertiary transition-colors"
+            >
+              <CloudOff size={16} />
+              Enable Offline Mode
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-tertiary">
+              <CloudOff size={16} />
+              Offline Mode Active
+            </div>
+          )}
         </motion.div>
       </main>
+
+      {/* Offline Mode Modal */}
+      <AnimatePresence>
+        {showModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-background/80 backdrop-blur-sm"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className="bg-surface-container-high border border-outline-variant/30 rounded-3xl p-6 max-w-[400px] w-full shadow-2xl relative overflow-hidden"
+            >
+              {!isDownloading && (
+                <button 
+                  onClick={() => setShowModal(false)}
+                  className="absolute top-4 right-4 text-outline hover:text-on-surface"
+                >
+                  <X size={20} />
+                </button>
+              )}
+
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container">
+                  <CloudOff size={24} />
+                </div>
+              </div>
+
+              <h3 className="text-xl font-bold text-on-surface text-center mb-2">
+                Go Fully Offline
+              </h3>
+              
+              {!isStandalone ? (
+                <>
+                  <p className="text-sm text-on-surface-variant text-center mb-6">
+                    <span className="font-bold text-tertiary">Step 1: Install the App</span><br/>
+                    To use SadBai fully offline without an internet connection, you must install it to your device's home screen first.
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={handleInstallApp}
+                      className="w-full py-3 rounded-full bg-tertiary text-on-tertiary font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-tertiary-container hover:text-on-tertiary-container transition-colors"
+                    >
+                      <Download size={18} />
+                      Install App
+                    </button>
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="w-full py-3 rounded-full text-on-surface-variant font-bold text-sm uppercase tracking-wider hover:bg-surface-variant/50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              ) : isDownloading ? (
+                <>
+                  <p className="text-sm text-on-surface-variant text-center mb-6">
+                    Downloading the AI engine directly into your device...
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex justify-between text-xs text-on-surface-variant font-medium">
+                      <span>Downloading...</span>
+                      <span>{progress ? Math.round(progress.progress * 100) : 0}%</span>
+                    </div>
+                    <div className="h-2 w-full bg-surface-variant rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-tertiary transition-all duration-300"
+                        style={{ width: `${progress ? progress.progress * 100 : 0}%` }}
+                      />
+                    </div>
+                    <span className="text-[10px] text-center text-outline truncate">
+                      {progress?.text || "Initializing..."}
+                    </span>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-on-surface-variant text-center mb-6">
+                    <span className="font-bold text-tertiary">Step 2: Download AI Engine</span><br/>
+                    App installed! Now, you need to download the AI engine (~1.5GB). You only need to do this once.
+                  </p>
+                  <div className="flex flex-col gap-2">
+                    <button
+                      onClick={() => {
+                        setIsDownloading(true);
+                        onEnableOffline(
+                          (p) => setProgress(p),
+                          () => {
+                            setIsDownloading(false);
+                            setShowModal(false);
+                          },
+                          (err) => {
+                            console.error(err);
+                            setIsDownloading(false);
+                            setShowModal(false);
+                            alert("Failed to load offline model. See console.");
+                          }
+                        );
+                      }}
+                      className="w-full py-3 rounded-full bg-tertiary text-on-tertiary font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 hover:bg-tertiary-container hover:text-on-tertiary-container transition-colors"
+                    >
+                      <Download size={18} />
+                      Start Download
+                    </button>
+                    <button
+                      onClick={() => setShowModal(false)}
+                      className="w-full py-3 rounded-full text-on-surface-variant font-bold text-sm uppercase tracking-wider hover:bg-surface-variant/50 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </>
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <Footer language={lang} />
     </div>

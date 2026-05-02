@@ -8,6 +8,7 @@ import { ReflectionScreen } from './components/ReflectionScreen';
 import { SupportScreen } from './components/SupportScreen';
 import { Screen, Message, Language } from './types';
 import { generateReflection } from './gemini';
+import { CreateWebWorkerMLCEngine, InitProgressReport, WebWorkerMLCEngine } from "@mlc-ai/web-llm";
 
 export default function App() {
   const [screen, setScreen] = useState<Screen>('landing');
@@ -17,19 +18,52 @@ export default function App() {
   const [reflectionData, setReflectionData] = useState<any>(null);
   const [isReflecting, setIsReflecting] = useState(false);
 
+  // WebLLM State
+  const [engine, setEngine] = useState<WebWorkerMLCEngine | null>(null);
+  const [isOfflineMode, setIsOfflineMode] = useState(false);
+
   const handleReflect = async () => {
     if (messages.length < 2) return;
     setIsReflecting(true);
     setScreen('reflection');
     
     try {
-      const response = await fetch('/api/reflect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages, language })
-      });
-      const data = await response.json();
-      setReflectionData(data);
+      if (isOfflineMode && engine) {
+        // Offline Reflection
+        const systemPrompt = `You are SadBai AI's Closure Engine. Summarize the user's emotional venting session.
+Format your response EXACTLY as a JSON object with these keys:
+"summary": A 1-2 sentence summary of what happened (In ${language}).
+"truth": A powerful validation of their feelings (In ${language}).
+"nextStep": A gentle, tiny advice for the next 24 hours (In ${language}).
+
+Language: ${language === 'bisaya' ? 'Cebuano/Bisaya' : language === 'tagalog' ? 'Tagalog' : 'English'}.
+Keep it empathetic, non-judgmental, and short.`;
+
+        const chatHistory = messages.map((m: any) => ({
+          role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+          content: m.content
+        }));
+
+        const response = await engine.chat.completions.create({
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...chatHistory
+          ],
+          response_format: { type: "json_object" }
+        });
+
+        const dataStr = response.choices[0].message.content || "{}";
+        setReflectionData(JSON.parse(dataStr));
+      } else {
+        // Online Reflection
+        const response = await fetch('/api/reflect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages, language })
+        });
+        const data = await response.json();
+        setReflectionData(data);
+      }
     } catch (err) {
       console.error("Reflection failed:", err);
     } finally {
@@ -71,6 +105,26 @@ export default function App() {
     setScreen('chat');
   };
 
+  const handleEnableOffline = async (
+    onProgress: (progress: InitProgressReport) => void,
+    onComplete: () => void,
+    onError: (err: any) => void
+  ) => {
+    try {
+      // Use Web Worker to avoid freezing the UI
+      const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
+      const newEngine = await CreateWebWorkerMLCEngine(worker, "gemma-2b-it-q4f32_1-MLC", {
+        initProgressCallback: onProgress,
+      });
+      setEngine(newEngine);
+      setIsOfflineMode(true);
+      onComplete();
+    } catch (error) {
+      console.error(error);
+      onError(error);
+    }
+  };
+
   const handleSendMessage = async (content: string, image?: string) => {
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -84,33 +138,12 @@ export default function App() {
 
     try {
       const systemInstruction = language === 'bisaya'
-        ? "You are SadBai AI, a supportive listener for people going through heartbreak. STRICT RULE: Speak ONLY in Cebuano (Bisaya). DO NOT use English or Tagalog. Be extremely empathic, validating, and never judgmental. Keep responses short to encourage the user to 'ipagawas tanan'. If the user provides an image, it likely contains text or content that caused them pain—read it carefully and support them."
-        : "You are SadBai AI, a supportive listener for people going through heartbreak. STRICT RULE: Speak ONLY in Tagalog. DO NOT use English or Bisaya. Be extremely empathic, validating, and never judgmental. Keep responses short to encourage the user to 'ilabas lahat'. If the user provides an image, it likely contains text or content that caused them pain—read it carefully and support them.";
-
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          messages: [
-            ...messages.map(m => ({
-              role: m.role === 'user' ? 'user' as const : 'assistant' as const,
-              content: m.content,
-              image: m.imageUrl
-            })),
-            { role: 'user', content, image }
-          ],
-          systemInstruction
-        })
-      });
-
-      if (!response.ok) throw new Error("Backend chat error");
-      
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let aiResponseText = "";
+        ? "You are SadBai AI, a supportive listener for people going through heartbreak. STRICT RULE: Speak ONLY in Cebuano (Bisaya). DO NOT use English or Tagalog. Be extremely empathic, validating, and never judgmental. Keep responses short to encourage the user to 'ipagawas tanan'."
+        : "You are SadBai AI, a supportive listener for people going through heartbreak. STRICT RULE: Speak ONLY in Tagalog. DO NOT use English or Bisaya. Be extremely empathic, validating, and never judgmental. Keep responses short to encourage the user to 'ilabas lahat'.";
 
       const aiMsgId = (Date.now() + 1).toString();
-      
+      let aiResponseText = "";
+
       // Add initial empty AI message
       setMessages(prev => [...prev, {
         id: aiMsgId,
@@ -120,16 +153,66 @@ export default function App() {
       }]);
       setIsAiLoading(false);
 
-      if (reader) {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          const chunk = decoder.decode(value, { stream: true });
-          aiResponseText += chunk;
-          
+      if (isOfflineMode && engine) {
+        // --- OFFLINE MODE ---
+        const formattedMessages = [
+          { role: "system" as const, content: systemInstruction },
+          ...messages.map(m => ({
+            role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+            content: m.content
+          })),
+          { role: 'user' as const, content }
+        ];
+
+        // Currently, image inputs aren't natively supported by standard WebLLM gemma-2b without a multimodal model.
+        // We'll pass text only.
+
+        const chunks = await engine.chat.completions.create({
+          messages: formattedMessages,
+          stream: true,
+        });
+
+        for await (const chunk of chunks) {
+          const content = chunk.choices[0]?.delta.content || "";
+          aiResponseText += content;
           setMessages(prev => prev.map(m => 
             m.id === aiMsgId ? { ...m, content: aiResponseText } : m
           ));
+        }
+      } else {
+        // --- ONLINE MODE ---
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            messages: [
+              ...messages.map(m => ({
+                role: m.role === 'user' ? 'user' as const : 'assistant' as const,
+                content: m.content,
+                image: m.imageUrl
+              })),
+              { role: 'user', content, image }
+            ],
+            systemInstruction
+          })
+        });
+
+        if (!response.ok) throw new Error("Backend chat error");
+        
+        const reader = response.body?.getReader();
+        const decoder = new TextDecoder();
+
+        if (reader) {
+          while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            const chunk = decoder.decode(value, { stream: true });
+            aiResponseText += chunk;
+            
+            setMessages(prev => prev.map(m => 
+              m.id === aiMsgId ? { ...m, content: aiResponseText } : m
+            ));
+          }
         }
       }
 
@@ -139,8 +222,12 @@ export default function App() {
         .map(m => m.content);
       
       if (userMessagesOnly.length >= 2) {
-        const reflection = await generateReflection(userMessagesOnly, language);
-        setReflectionData(reflection);
+        if (!isOfflineMode) {
+          const reflection = await generateReflection(userMessagesOnly, language);
+          setReflectionData(reflection);
+        }
+        // If offline, reflection will be generated when handleReflect is called 
+        // to save local compute power during the chat.
       }
 
     } catch (error) {
@@ -176,7 +263,11 @@ export default function App() {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            <LandingScreen onStart={handleStart} />
+            <LandingScreen 
+              onStart={handleStart} 
+              onEnableOffline={handleEnableOffline}
+              isOfflineMode={isOfflineMode}
+            />
           </motion.div>
         ) : (
           <motion.div
