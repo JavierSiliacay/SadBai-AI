@@ -2,7 +2,7 @@ import { Language } from './types';
 
 export const generateReflection = async (messages: string[], language: Language) => {
   try {
-    const langLabel = language === 'bisaya' ? 'Cebuano (Bisaya)' : 'Tagalog';
+    const langLabel = language === 'bisaya' ? 'Cebuano (Bisaya)' : language === 'tagalog' ? 'Tagalog' : 'English';
     const prompt = `
       Based on the following emotional venting session (messages from the user), provide a "SadBai Reflection".
       
@@ -10,12 +10,13 @@ export const generateReflection = async (messages: string[], language: Language)
       ${messages.join("\n")}
       
       Requirements:
-      1. One empathic response in ${langLabel} that validates their feelings.
-      2. "Unsay Nahitabo" (or equivalent in ${langLabel}): A neutral breakdown of what happened.
-      3. "Kamatuoran" (or equivalent in ${langLabel}): Validation of their emotional truth.
-      4. "Focus Sunod" (or equivalent in ${langLabel}): Small, manageable steps for tomorrow.
+      1. One human-like, empathic response in ${langLabel} that validates their feelings. ${language === 'bisaya' ? 'Talk like a Bisaya Gen Z using modern slang (ka-vibe, lowkey, omsim, dasurb, for real) and casual English mixing.' : ''}
+      2. "Unsay Nahitabo" (or equivalent in ${langLabel}): A neutral, human-like breakdown of what happened.
+      3. "Kamatuoran" (or equivalent in ${langLabel}): A powerful, human-like validation of their emotional truth.
+      4. "Focus Sunod" (or equivalent in ${langLabel}): Small, manageable, human-like steps for tomorrow.
       
-      STRICT RULE: All content MUST be in ${langLabel}. DO NOT mix English words. Use pure ${langLabel}.
+      STRICT RULE for ${langLabel}: 
+      ${language === 'bisaya' ? 'Use Bisaya Gen Z slang and casual English mixing as is common in modern Cebuano.' : language === 'tagalog' ? 'DO NOT mix English words. Use pure Tagalog.' : 'Use natural, empathetic English.'}
 
       
       Format the response MUST be a valid JSON object:
@@ -43,6 +44,13 @@ export const generateReflection = async (messages: string[], language: Language)
         breakdown: "Dumaan ka sa mahirap na panahon at nararamdaman mong parang wala kang patutunguhan.",
         truth: "Mahalaga ang nararamdaman mo dahil totoo iyan para sa iyo.",
         steps: "Magpahinga muna ngayon. Bukas, magsimula sa isang maliit na bagay."
+      };
+    } else if (language === 'english') {
+      return {
+        reflection: "I'm listening to you. It's okay to feel sad right now.",
+        breakdown: "You've been through a difficult time and feel like you're going nowhere.",
+        truth: "Your feelings are important because they are real to you.",
+        steps: "Rest for now. Tomorrow, start with one small thing."
       };
     }
     return {

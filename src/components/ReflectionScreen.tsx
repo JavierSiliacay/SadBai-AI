@@ -15,9 +15,9 @@ export const ReflectionScreen = ({ data, language, isLoading }: { data: Reflecti
     truth: "Mahalaga ang nararamdaman mo dahil totoo iyan para sa iyo.",
     nextStep: "Magpahinga muna ngayon. Bukas, magsimula sa isang maliit na bagay."
   } : language === 'bisaya' ? {
-    summary: "Nag-agi ka ug lisod nga panahon ug gibati nimo nga walay padulngan.",
-    truth: "Importante ang imong gibati kay tinuod na para nimo.",
-    nextStep: "Pahuway sa karon. Ugma, pagsugod sa usa ka gamay nga butang."
+    summary: "Nag-agi ka og lisod nga phase sa imong life ug gibati nimo nga lowkey walay padulngan.",
+    truth: "Important kaayo imong gibati kay valid ug tinuod na para nimo.",
+    nextStep: "Pahuway sa for now. Ugma, pagsugod og usa ka gamay nga butang, dasurb nimo."
   } : {
     summary: "You've been through a difficult time and felt like you were going nowhere.",
     truth: "Your feelings are important because they are real to you.",
@@ -44,12 +44,12 @@ export const ReflectionScreen = ({ data, language, isLoading }: { data: Reflecti
               <Sparkles size={64} className="opacity-50" />
             </motion.div>
             <h2 className="text-2xl font-h1 font-bold text-on-background mb-4">
-              {language === 'bisaya' ? 'Nag-weaving og katin-awan...' : language === 'tagalog' ? 'Nag-hahabi ng kalinawan...' : 'Weaving clarity...'}
+              {language === 'bisaya' ? 'Kadiyot lang, gihan-ay sa nako imong feelings... ✨' : language === 'tagalog' ? 'Sandali lang, inaayos ko lang ang iyong mga nararamdaman... 🫂' : 'Hold on, just organizing your feelings for a second... 🥺'}
             </h2>
             <p className="text-on-surface-variant max-w-md mx-auto leading-relaxed">
               {language === 'bisaya' 
-                ? 'Naminaw si SadBai. Kadiyot lang, gihan-ay namo ang imong mga gibati para makakita ka og katin-awan.' 
-                : language === 'tagalog' ? 'Nakikinig si SadBai. Sandali lang, inaayos namin ang iyong mga nararamdaman para makakita ka ng kalinawan.' : 'SadBai is listening. Just a moment, we are organizing your feelings so you can find clarity.'}
+                ? 'Naminaw kog maayo nimo. Kadiyot lang ha, gihan-ay nako ni tanan para makita nimo ang katin-awan yarn ✨.' 
+                : language === 'tagalog' ? 'Nakikinig ako nang mabuti sa lahat ng sinabi mo. Sandali lang, inaayos ko lang ito para makita mo ang katinuan 🫂.' : 'I have been listening closely to everything you shared. Just a moment while I organize your thoughts so you can see things clearly 🥺.'}
             </p>
           </motion.div>
         )}
@@ -76,7 +76,7 @@ export const ReflectionScreen = ({ data, language, isLoading }: { data: Reflecti
           <div className="space-y-4 text-lg text-on-surface-variant leading-relaxed">
             <p>
               {language === 'bisaya' 
-                ? 'Naminaw ko nimo pag-ayo. Okay ra na mobati ug kaguol karon. Pinangga ka, ug tinuod ang imong mga gibati.' 
+                ? 'Naminaw ko nimo pag-ayo, for real. Okay ra gyud na mobati og kaguol karon. Dasurb nimo ma-validate imong feelings.' 
                 : language === 'tagalog' ? 'Nakikinig ako sa iyo nang mabuti. Okay lang na makaramdam ng kalungkutan ngayon. Mahalaga ka, at totoo ang iyong mga nararamdaman.' : 'I’ve been listening to you closely. It’s okay to feel sad right now. You are valued, and your feelings are real.'}
             </p>
           </div>

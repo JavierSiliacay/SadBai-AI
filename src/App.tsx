@@ -24,6 +24,44 @@ export default function App() {
   const [engine, setEngine] = useState<WebWorkerMLCEngine | null>(null);
   const [isOfflineMode, setIsOfflineMode] = useState(false);
   const [globalHugs, setGlobalHugs] = useState<{id: number}[]>([]);
+  const [connectionToast, setConnectionToast] = useState<string | null>(null);
+
+  // Auto-detect internet connection and switch AI modes
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOfflineMode(false);
+      setConnectionToast('🌐 Online! Using cloud AI for better responses.');
+      setTimeout(() => setConnectionToast(null), 4000);
+    };
+
+    const handleOffline = () => {
+      // Only switch to offline if engine is available
+      setEngine(prev => {
+        if (prev) {
+          setIsOfflineMode(true);
+          setConnectionToast('📴 Offline! Switching to local AI engine.');
+          setTimeout(() => setConnectionToast(null), 4000);
+        } else {
+          setConnectionToast('⚠️ No internet. Enable Offline Mode to chat.');
+          setTimeout(() => setConnectionToast(null), 5000);
+        }
+        return prev;
+      });
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    // Set initial state based on current connection
+    if (!navigator.onLine) {
+      handleOffline();
+    }
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     const socket = io();
@@ -110,7 +148,7 @@ Keep it empathetic, non-judgmental, and short.`;
 
   const handleEndSession = () => {
     const greeting = language === 'bisaya' 
-      ? "Unsa man ang naa sa imong huna-huna karon? Sige lang, ipagawas tanan. Naminaw ko."
+      ? "Unsa man imong gihunahuna karon? Sige lang, ipagawas lang na tanan diri, lowkey naminaw ko nimo."
       : language === 'tagalog'
         ? "Ano ang nasa isip mo ngayon? Sige lang, ilabas mo lahat. Nakikinig ako."
         : "What is on your mind right now? Go ahead, let it all out. I am listening.";
@@ -128,7 +166,7 @@ Keep it empathetic, non-judgmental, and short.`;
   const handleStart = (selectedLang: Language) => {
     setLanguage(selectedLang);
     const greeting = selectedLang === 'bisaya' 
-      ? "Unsa man ang naa sa imong huna-huna karon? Sige lang, ipagawas tanan. Naminaw ko."
+      ? "Unsa man imong gihunahuna karon? Sige lang, ipagawas lang na tanan diri, lowkey naminaw ko nimo."
       : selectedLang === 'tagalog'
         ? "Ano ang nasa isip mo ngayon? Sige lang, ilabas mo lahat. Nakikinig ako."
         : "What is on your mind right now? Go ahead, let it all out. I am listening.";
@@ -182,30 +220,50 @@ Keep it empathetic, non-judgmental, and short.`;
 
     try {
       const systemInstruction = language === 'bisaya'
-        ? `You are SadBai, an empathetic friend. STRICT RULES: Reply ONLY in simple Cebuano (Bisaya). Keep it short (1-2 sentences). Do NOT use English.
+        ? `You are SadBai, an empathetic friend who talks like a Bisaya Gen Z. 
+STRICT RULES: 
+1. Use modern Bisaya slang (e.g., 'ka-vibe', 'omsim', 'dasurb', 'lowkey', 'skeri', 'for real', 'no cap', 'mood', 'G', 'yarn').
+2. Casual English mixing is allowed and encouraged for that authentic Gen Z feel.
+3. Keep it short (1-2 sentences). 
+4. DO NOT use emojis in every response. Use them sparingly. Only use '🥺' if the user's story is deeply heart-wrenching.
+5. Be very empathetic but in a chill, modern way.
+
 Examples:
 User: Gibiyaan ko niya.
-SadBai: Sakit kaayo paminawon. Okay ra na muhilak, naa ra ko diri maminaw nimo.
+SadBai: Huy, sakit kaayo na paminawon, no cap. Dasurb nimo ang happiness, lowkey naa ra ko diri para nimo.
 User: Kapoy na kaayo.
-SadBai: Ramdam nako imong kakapoy. Ipagawas lang na tanan, okay ra na.`
-        : `You are SadBai, an empathetic friend. STRICT RULES: Reply ONLY in simple Tagalog. Keep it short (1-2 sentences). Do NOT use English.
+SadBai: Ramdam nako imong kakapoy, for real. Ipagawas lang na tanan diri, valid na imong feelings yarn 🫂.`
+        : language === 'tagalog'
+          ? `You are SadBai, a deeply empathetic and human-like friend. 
+STRICT RULES: 
+1. Talk like a real person, not an AI. Use warm, conversational Tagalog.
+2. Keep it short (1-2 sentences). 
+3. Validate their feelings deeply. 
+4. DO NOT use emojis in every response. Use them only when it feels natural. If the story feels heavy, show it with '🥺'.
+
 Examples:
 User: Iniwan niya ako.
-SadBai: Napakasakit niyan. Okay lang umiyak, nandito lang ako para makinig sa'yo.
-User: Ang lungkot ko ngayon.
-SadBai: Ramdam ko ang bigat ng nararamdaman mo. Ilabas mo lang lahat dito.`;
+SadBai: Ang sakit naman niyan... nandito lang ako, makikinig ako sa lahat ng nararamdaman mo.
+User: Pagod na pagod na ako.
+SadBai: Ramdam ko ang bigat ng dala mo. Sige lang, ilabas mo lang lahat dito. Okay lang na hindi maging okay 🫂.`
+          : `You are SadBai, a deeply empathetic and human-like friend.
+STRICT RULES:
+1. Talk like a real person, not an AI. Use warm, natural English.
+2. Keep it short (1-2 sentences).
+3. Be a supportive presence, not a robotic assistant.
+4. DO NOT use emojis in every response. Use them sparingly. If the story feels heavy, show it with '🥺'.
+
+Examples:
+User: They left me.
+SadBai: I'm so sorry... that's incredibly painful. I'm right here with you, just let it all out.
+User: I'm just so exhausted.
+SadBai: I can really feel how heavy everything is for you right now. It's okay to just rest and talk it out here 🫂.`;
 
       const aiMsgId = (Date.now() + 1).toString();
       let aiResponseText = "";
+      let aiMessageAdded = false;
 
-      // Add initial empty AI message
-      setMessages(prev => [...prev, {
-        id: aiMsgId,
-        role: 'ai',
-        content: '',
-        timestamp: new Date()
-      }]);
-      setIsAiLoading(false);
+      setIsAiLoading(true);
 
       if (isOfflineMode && engine) {
         // --- OFFLINE MODE ---
@@ -235,9 +293,20 @@ SadBai: Ramdam ko ang bigat ng nararamdaman mo. Ilabas mo lang lahat dito.`;
           finalOutput += content;
           
           // Post-processing to ensure tone mapping if possible, though mostly relying on system prompt
-          setMessages(prev => prev.map(m => 
-            m.id === aiMsgId ? { ...m, content: aiResponseText } : m
-          ));
+          if (!aiMessageAdded && aiResponseText.length > 0) {
+            setMessages(prev => [...prev, {
+              id: aiMsgId,
+              role: 'ai',
+              content: aiResponseText,
+              timestamp: new Date()
+            }]);
+            aiMessageAdded = true;
+            setIsAiLoading(false);
+          } else if (aiMessageAdded) {
+            setMessages(prev => prev.map(m => 
+              m.id === aiMsgId ? { ...m, content: aiResponseText } : m
+            ));
+          }
         }
         
         // Output Post-Processing Fallback
@@ -277,9 +346,20 @@ SadBai: Ramdam ko ang bigat ng nararamdaman mo. Ilabas mo lang lahat dito.`;
             const chunk = decoder.decode(value, { stream: true });
             aiResponseText += chunk;
             
-            setMessages(prev => prev.map(m => 
-              m.id === aiMsgId ? { ...m, content: aiResponseText } : m
-            ));
+            if (!aiMessageAdded && aiResponseText.length > 0) {
+              setMessages(prev => [...prev, {
+                id: aiMsgId,
+                role: 'ai',
+                content: aiResponseText,
+                timestamp: new Date()
+              }]);
+              aiMessageAdded = true;
+              setIsAiLoading(false);
+            } else if (aiMessageAdded) {
+              setMessages(prev => prev.map(m => 
+                m.id === aiMsgId ? { ...m, content: aiResponseText } : m
+              ));
+            }
           }
         }
       }
@@ -408,6 +488,21 @@ SadBai: Ramdam ko ang bigat ng nararamdaman mo. Ilabas mo lang lahat dito.`;
         activeScreen={screen} 
         setScreen={(s) => s === 'reflection' ? handleReflect() : setScreen(s)} 
       />
+
+      {/* Connection Status Toast */}
+      <AnimatePresence>
+        {connectionToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -60 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -60 }}
+            transition={{ duration: 0.4, ease: 'easeOut' }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-[200] bg-slate-900/95 backdrop-blur-xl border border-white/10 text-white text-xs px-5 py-3 rounded-2xl shadow-2xl text-center whitespace-nowrap"
+          >
+            {connectionToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Global Hugs Animation Container */}
       <div className="fixed inset-0 pointer-events-none z-[100] flex items-center justify-center overflow-hidden">

@@ -122,7 +122,7 @@ export const LandingScreen = ({
           transition={{ delay: 0.1 }}
           className="font-h1 text-3xl md:text-4xl text-on-background max-w-[14ch] mx-auto drop-shadow-sm leading-tight font-semibold"
         >
-          {lang === 'bisaya' && 'Kasing-kasing mo, luwas diri.'}
+          {lang === 'bisaya' && 'Kasing-kasing mo, safe diri.'}
           {lang === 'tagalog' && 'Puso mo, ligtas dito.'}
           {lang === 'english' && 'Your heart is safe here.'}
         </motion.h1>
@@ -174,7 +174,7 @@ export const LandingScreen = ({
           >
             <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             <span className="text-sm font-bold uppercase tracking-wide relative z-10">
-              {lang === 'bisaya' ? 'Magpadayun na' : lang === 'tagalog' ? 'Magpatuloy na' : 'Continue now'}
+              {lang === 'bisaya' ? 'Sige na, larga' : lang === 'tagalog' ? 'Magpatuloy na' : 'Continue now'}
             </span>
             <ArrowRight size={20} className="relative z-10 group-hover:translate-x-1 transition-transform duration-300" />
           </button>

@@ -154,16 +154,43 @@ export const ChatScreen = ({ messages, onSendMessage, isAiLoading, language }: C
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="flex w-full justify-start"
+              className="flex w-full justify-start mt-2"
             >
-              <div className="chat-bubble-ai rounded-2xl rounded-tl-sm p-4 text-on-surface shadow-lg max-w-[85%] flex items-center gap-2">
-                <span className="w-2 h-2 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '0s' }}></span>
-                <span className="w-2 h-2 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                <span className="w-2 h-2 bg-tertiary rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+              <div 
+                style={{ 
+                  backgroundColor: '#282a4d', 
+                  padding: '16px', 
+                  borderRadius: '16px', 
+                  borderTopLeftRadius: '4px', 
+                  borderLeft: '4px solid #f9a8d4', 
+                  boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                  minWidth: '280px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '8px',
+                  marginTop: '8px'
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f9a8d4' }}>
+                  <div className="w-4 h-4 border-2 border-tertiary border-t-transparent rounded-full animate-spin"></div>
+                  <span style={{ fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.4em' }}>
+                    SADBAI IS REFLECTING
+                  </span>
+                </div>
+                <p style={{ color: '#ffffff', fontSize: '16px', fontStyle: 'italic', margin: 0, fontWeight: 500, lineHeight: 1.5 }}>
+                  {language === 'bisaya'
+                    ? 'Ga huna-huna pako, wait lang...'
+                    : language === 'tagalog'
+                    ? 'Wait lang ha, iniisip ko pa eh...'
+                    : 'Wait lang, thinking for a sec...'}
+                </p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* DEBUG BUBBLE - SHOULD ALWAYS SHOW IF THIS FILE IS ACTIVE */}
+        <div className="hidden">File Version: 1.0.5 - Fixed Visibility</div>
 
         {messages.length === 1 && (
           <div className="flex flex-wrap gap-2 mt-4 mb-2 justify-start max-w-[85%]">

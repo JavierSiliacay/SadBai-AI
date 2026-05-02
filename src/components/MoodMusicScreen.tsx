@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Download, LogOut, Waves, Heart, Wind, Moon, Droplets, X, ExternalLink, Music, Link as LinkIcon, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Download, LogOut, Waves, Heart, Wind, Moon, Droplets, X, Music, Link as LinkIcon, CheckCircle2, AlertCircle, Play, Pause } from 'lucide-react';
 import { Language } from '../types';
 
 interface MoodCardProps {
@@ -38,6 +38,14 @@ const MoodCard = ({ title, badge, description, icon, colorClass, animate, onClic
 );
 
 const TikTokModal = ({ isOpen, onClose, videoId, title, colorClass }: { isOpen: boolean, onClose: () => void, videoId: string, title: string, colorClass: string }) => {
+  const [hasInteracted, setHasInteracted] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && videoId) {
+      setHasInteracted(false); // reset on new video
+    }
+  }, [isOpen, videoId]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -71,51 +79,103 @@ const TikTokModal = ({ isOpen, onClose, videoId, title, colorClass }: { isOpen: 
             </div>
 
             {/* Visual Sanctuary Area */}
-            <div className="relative w-full aspect-square flex items-center justify-center mb-8 z-10">
-              {/* THE SONIC ENGINE: Automatic Unmuted Playback */}
+            <div 
+              className="relative w-full aspect-square flex items-center justify-center mb-8 z-10"
+            >
+              {/* Interaction Overlay */}
+              {/* If playing, this captures all clicks (blocking redirects) and reloads the iframe to stop.
+                  If paused, this briefly disappears on mousedown to allow the 'Play' click to reach TikTok. */}
+              <div 
+                className="absolute inset-0 z-30 cursor-pointer rounded-full"
+                onMouseDown={() => {
+                  if (hasInteracted) {
+                    // Currently playing, so stop it by reloading
+                    setHasInteracted(false);
+                  } else {
+                    // Currently stopped, so play it by clicking through
+                    setHasInteracted(true);
+                    const shield = document.getElementById('tiktok-shield');
+                    if (shield) {
+                      shield.style.pointerEvents = 'none';
+                      // Wait longer to ensure the browser processes the mouseup/click on the iframe
+                      setTimeout(() => {
+                        if (shield) shield.style.pointerEvents = 'auto';
+                      }, 500); 
+                    }
+                  }
+                }}
+                id="tiktok-shield"
+              />
+
+              {/* TikTok iframe area */}
               <div className="absolute inset-0 flex items-center justify-center overflow-hidden rounded-full border border-white/5">
-                <div className="w-[180%] h-[180%] absolute flex items-center justify-center pointer-events-auto opacity-[0.25] blur-md">
+                <div className="w-[180%] h-[180%] absolute flex items-center justify-center pointer-events-auto opacity-[0.25] blur-md transition-opacity duration-700">
+                  {/* We always render the iframe but we change the SRC to reload/stop it */}
                   <iframe 
-                    src={`https://www.tiktok.com/embed/v2/${videoId}?autoplay=1&muted=0`}
+                    key={hasInteracted ? 'playing' : 'stopped'}
+                    src={hasInteracted ? `https://www.tiktok.com/embed/v2/${videoId}?autoplay=1&muted=0` : ''}
                     className="w-full h-full border-0"
                     allow="autoplay; encrypted-media"
+                    sandbox="allow-scripts allow-same-origin allow-presentation"
                   />
                 </div>
               </div>
 
+              {/* Decorative sphere — Visual feedback */}
               <div className="relative flex items-center justify-center z-20 pointer-events-none">
-                {/* Breathing Sphere */}
                 <motion.div 
-                  animate={{ 
-                    scale: [1, 1.4, 1],
-                    opacity: [0.3, 0.6, 0.3],
+                  animate={hasInteracted ? { 
+                    scale: [1, 1.2, 1],
+                    opacity: [0.5, 0.8, 0.5],
                     boxShadow: [
-                      "0 0 40px rgba(192, 193, 255, 0.1)",
-                      "0 0 100px rgba(192, 193, 255, 0.3)",
-                      "0 0 40px rgba(192, 193, 255, 0.1)"
+                      "0 0 40px rgba(192, 193, 255, 0.2)",
+                      "0 0 80px rgba(192, 193, 255, 0.4)",
+                      "0 0 40px rgba(192, 193, 255, 0.2)"
                     ]
+                  } : {
+                    scale: [1, 1.05, 1],
+                    opacity: [0.4, 0.6, 0.4],
+                    boxShadow: "0 0 30px rgba(192, 193, 255, 0.15)"
                   }}
                   transition={{ 
-                    duration: 8, 
+                    duration: hasInteracted ? 4 : 3, 
                     repeat: Infinity, 
                     ease: "easeInOut" 
                   }}
-                  className="w-40 h-40 rounded-full bg-gradient-to-br from-primary/20 to-secondary/20 border border-white/10 backdrop-blur-3xl"
+                  className="w-40 h-40 rounded-full bg-gradient-to-br from-primary/30 to-secondary/30 border border-white/20 backdrop-blur-3xl"
                 />
-                <div className="absolute inset-0 flex flex-col items-center justify-center">
-                  <motion.span 
-                    animate={{ opacity: [0.4, 1, 0.4] }}
-                    transition={{ duration: 4, repeat: Infinity }}
-                    className="text-[11px] font-black uppercase tracking-[0.4em] text-primary/80"
-                  >
-                    Breathe & Listen
-                  </motion.span>
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
+                  {hasInteracted ? (
+                    <>
+                      <motion.div animate={{ scale: [0.9, 1.1, 0.9] }} transition={{ duration: 2, repeat: Infinity }}>
+                        <Pause size={32} className="text-white" fill="currentColor" />
+                      </motion.div>
+                      <motion.span 
+                        animate={{ opacity: [0.6, 1, 0.6] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="text-[10px] font-black uppercase tracking-[0.4em] text-white/90"
+                      >
+                        Playing
+                      </motion.span>
+                    </>
+                  ) : (
+                    <>
+                      <motion.div animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 1.5, repeat: Infinity }}>
+                        <Play size={32} className="text-white" fill="currentColor" />
+                      </motion.div>
+                      <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white/90">
+                        Tap to Play
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
 
-            <p className="text-sm text-outline leading-relaxed px-4 mb-8 z-10">
-              Close your eyes. Focus on the sound. Let the music ground your emotions. Tap the circle if the sound is muted.
+            <p className="text-sm text-on-surface/50 leading-relaxed px-4 mb-8 z-10">
+              {hasInteracted 
+                ? "Close your eyes. Breathe. Let the music carry you."
+                : "Tap the circle to start. Sound plays through TikTok — unmute if needed."}
             </p>
 
             <button 
