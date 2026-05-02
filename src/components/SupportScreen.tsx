@@ -16,7 +16,7 @@ export const SupportScreen = ({ language }: { language: Language }) => {
 
   useEffect(() => {
     // Check if model exists
-    hasModelInCache('gemma-2b-it-q4f32_1-MLC').then(setHasModel);
+    hasModelInCache('Qwen2.5-1.5B-Instruct-q4f16_1-MLC').then(setHasModel);
     const newSocket = io();
     setSocket(newSocket);
     
@@ -59,14 +59,14 @@ export const SupportScreen = ({ language }: { language: Language }) => {
   const handleDeleteModel = async () => {
     const confirmDelete = window.confirm(
       language === 'bisaya' 
-        ? "Sigurado ka gusto nimo e-delete ang AI engine? Mubakante ni ug ~1.5GB nga storage sa imong device." 
-        : language === 'tagalog' ? "Sigurado ka bang gusto mong burahin ang AI engine? Makakapag-free ito ng ~1.5GB sa storage mo." 
-        : "Are you sure you want to delete the AI engine? This will free up ~1.5GB of storage on your device."
+        ? "Sigurado ka gusto nimo e-delete ang AI engine? Mubakante ni ug ~1GB nga storage sa imong device." 
+        : language === 'tagalog' ? "Sigurado ka bang gusto mong burahin ang AI engine? Makakapag-free ito ng ~1GB sa storage mo." 
+        : "Are you sure you want to delete the AI engine? This will free up ~1GB of storage on your device."
     );
 
     if (confirmDelete) {
       try {
-        await deleteModelAllInfoInCache('gemma-2b-it-q4f32_1-MLC');
+        await deleteModelAllInfoInCache('Qwen2.5-1.5B-Instruct-q4f16_1-MLC');
         localStorage.removeItem('sadbai_offline_enabled');
         setHasModel(false);
         alert(language === 'bisaya' ? "Malamposon nga na delete!" : "Successfully deleted!");
@@ -178,7 +178,7 @@ export const SupportScreen = ({ language }: { language: Language }) => {
                   {language === 'bisaya' ? 'I-delete ang AI Engine' : language === 'tagalog' ? 'Burahin ang AI Engine' : 'Delete AI Engine'}
                 </p>
                 <p className="text-[10px] text-error/70">
-                  {language === 'bisaya' ? 'Makabakante ug ~1.5GB nga storage' : language === 'tagalog' ? 'Mag-free ng ~1.5GB na storage' : 'Free up ~1.5GB of storage space'}
+                  {language === 'bisaya' ? 'Makabakante ug ~1GB nga storage' : language === 'tagalog' ? 'Mag-free ng ~1GB na storage' : 'Free up ~1GB of storage space'}
                 </p>
               </div>
             </div>

@@ -283,7 +283,7 @@ export const LandingScreen = ({
                     App installed! Now, you need to download the AI engine. You only need to do this once.
                   </p>
                   <div className="bg-error-container/20 border border-error/30 p-3 rounded-xl mb-6 text-xs text-on-surface text-center">
-                    <span className="font-bold text-error">Warning:</span> The download is roughly <strong>~1.5GB</strong>. Please ensure you are on Wi-Fi to avoid cellular data charges.
+                    <span className="font-bold text-error">Warning:</span> The download is roughly <strong>~1GB</strong>. Please ensure you are on Wi-Fi to avoid cellular data charges.
                   </div>
                   <div className="flex flex-col gap-2">
                     <button

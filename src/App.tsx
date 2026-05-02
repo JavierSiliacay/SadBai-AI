@@ -46,7 +46,7 @@ export default function App() {
         if (navigator.storage && navigator.storage.persist) {
           await navigator.storage.persist();
         }
-        const isCached = await hasModelInCache("gemma-2b-it-q4f32_1-MLC");
+        const isCached = await hasModelInCache("Qwen2.5-1.5B-Instruct-q4f16_1-MLC");
         const wasEnabled = localStorage.getItem("sadbai_offline_enabled") === "true";
         if (isCached && wasEnabled) {
           // Silently load in background
@@ -156,7 +156,7 @@ Keep it empathetic, non-judgmental, and short.`;
       }
       // Use Web Worker to avoid freezing the UI
       const worker = new Worker(new URL('./worker.ts', import.meta.url), { type: 'module' });
-      const newEngine = await CreateWebWorkerMLCEngine(worker, "gemma-2b-it-q4f32_1-MLC", {
+      const newEngine = await CreateWebWorkerMLCEngine(worker, "Qwen2.5-1.5B-Instruct-q4f16_1-MLC", {
         initProgressCallback: onProgress,
       });
       setEngine(newEngine);
@@ -225,7 +225,7 @@ SadBai: Ramdam ko ang bigat ng nararamdaman mo. Ilabas mo lang lahat dito.`;
           messages: formattedMessages,
           stream: true,
           max_tokens: 80,
-          temperature: 0.6,
+          temperature: 0.7,
         });
 
         let finalOutput = "";
