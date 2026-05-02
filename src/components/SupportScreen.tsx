@@ -142,7 +142,7 @@ export const SupportScreen = ({ language }: { language: Language }) => {
           {[
             { name: 'Facebook', url: 'https://facebook.com/siliacayjavier', icon: <Facebook size={18} />, label: '@siliacayjavier' },
             { name: 'Instagram', url: 'https://www.instagram.com/itsyaboi_vier', icon: <Instagram size={18} />, label: '@itsyaboi_vier' },
-            { name: 'GitHub', url: 'https://github.com/javiersiliacay', icon: <Github size={18} />, label: '@javiersiliacay' }
+            { name: 'GitHub', url: 'https://github.com/JavierSiliacay/SadBai-AI', icon: <Github size={18} />, label: '@javiersiliacay' }
           ].map((s, i) => (
             <a 
               key={i} 

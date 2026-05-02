@@ -22,6 +22,12 @@ If things feel overwhelming, use our Guided Breathing tool. It provides a simple
 ### Send and Receive Support
 The Solidarity Hub is a way to feel connected to others. You can send virtual "hugs" to show support for everyone else using the platform, and see how much love the community is sharing.
 
+### Go Fully Offline (Ultimate Privacy)
+We understand that your feelings are incredibly personal. SadBai offers a **True Offline Mode**, ensuring that absolutely zero data leaves your device. 
+* **Step 1: Install the App.** When you visit SadBai in your browser, tap the "Enable Offline Mode" button to install SadBai directly to your phone's home screen.
+* **Step 2: Download the AI Brain.** Once installed, open the app and download the AI engine (a one-time ~1.5GB download).
+* **Step 3: Unplug.** You can now turn off your Wi-Fi or go into Airplane Mode. SadBai will continue to listen, reply, and help you reflect completely offline.
+
 ---
 
 ## About the Project
